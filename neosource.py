@@ -13,6 +13,9 @@ class PlatformNotSupported(Exception):
     pass
 
 def remove_json(dir_path):
+    '''
+    Remove the JSON file that DependencyCheck generates to aid in cleanup.
+    '''
     sleep(10)
     os.remove(dir_path + 'dependency-check-report.json')
 
@@ -24,12 +27,12 @@ def check_json(dir_path):
     with open(dir_path + 'dependency-check-report.json') as file:
         output = json.load(file)
         try:
-            if output['analysisExceptions']:
+            if output['scanInfo']['analysisExceptions']:
                 print("If you are attempting to scan a go.mod file, make sure you have Golang installed.\n")
                 # remove_json(dir_path)
                 exit(1)
         except KeyError:
-            pass
+            print("Key error found")
         if not output['dependencies']:
             print('\nError: Dependency Check found 0 dependencies in the provided file/path. The filepath specified may not be a valid dependency file.')
             file.close()
