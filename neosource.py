@@ -62,7 +62,7 @@ def run_dependency_check_tool(filepath, dir_path):
 
     if platform == 'linux' or platform == 'linux2' or platform == 'darwin': ## If the Computer is a Mac or Linux
         dir_path = dir_path + '/'
-        if not os.path.isfile("dependency-check/bin/dependency-check.sh"):
+        if not os.path.isfile(dir_path + "dependency-check/bin/dependency-check.sh"):
             print("Dependency Check cannot be found.")
             exit(1)
         process = subprocess.Popen([dir_path + 'dependency-check/bin/dependency-check.sh', '-s', filepath,'-o', dir_path + '/dependency-check-report.json', '-f', 'JSON', '--enableExperimental'], stdout=subprocess.PIPE)
@@ -72,6 +72,9 @@ def run_dependency_check_tool(filepath, dir_path):
         process.wait()
     elif platform == 'win32' or platform == 'cygwin': ## If the Computer is a Windows
         dir_path = dir_path + '\\'
+        if not os.path.isfile(dir_path + "dependency-check\\bin\\dependency-check.sh"):
+            print("Dependency Check cannot be found.")
+            exit(1)
         process = subprocess.Popen([dir_path + 'dependency-check\\bin\\dependency-check.bat', '-s', filepath,'-o', dir_path +'\\dependency-check-report.json', '-f', 'JSON', '--enableExperimental'], stdout=subprocess.PIPE)
         for line in iter(process.stdout.readline, b''):
             print(line.decode('utf-8', errors='ignore').strip(), flush = True)
