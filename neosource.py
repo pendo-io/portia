@@ -23,10 +23,17 @@ def check_json(dir_path):
     print("Validating JSON file",flush=True)
     with open(dir_path + 'dependency-check-report.json') as file:
         output = json.load(file)
+        try:
+            if output['analysisExceptions']:
+                print("If you are attempting to scan a go.mod file, make sure you have Golang installed.\n")
+                # remove_json(dir_path)
+                exit(1)
+        except KeyError:
+            pass
         if not output['dependencies']:
-            print('\nError: Dependency Check found 0 dependencies in the provided file/path. The filepath specified may not be a valid dependency file.\n(If you are attempting to scan a go.mod file, make sure you have Golang installed.)\n')
+            print('\nError: Dependency Check found 0 dependencies in the provided file/path. The filepath specified may not be a valid dependency file.')
             file.close()
-            os.remove('dependency-check-report.json')
+            # remove_json(dir_path)
             # Make sure to delete json file before exiting probably.
             exit(1)
 
