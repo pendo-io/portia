@@ -1,4 +1,5 @@
 from neo4j import GraphDatabase
+from neo4j import exceptions
 import get_dc_data
 import os
 #import click
@@ -7,6 +8,18 @@ import os
 driver = GraphDatabase.driver(os.environ.get('NEO4J_DB'),
                                   auth=(os.environ.get('NEO4J_USER'), os.environ.get('NEO4J_PWD')))
 tx = driver.session()
+
+def neo4JCheck():
+    print("Validating neo4j instance",flush=True)
+    try:
+        tx.run(''' MATCH (n) RETURN n ''')  #Runs a Generic Query to try and connect to the database
+        print("A valid NEO4J existance!",flush=True)
+    except exceptions.ServiceUnavailable:
+        print("Error: Invalid neo4j instace\nPlease make sure neo4j is installed and running")
+        exit(1)
+    except exceptions.AuthError:
+        print("Error: Invalid neo4j credentials\nPlease make sure your credentials are correct")
+        exit(1)
 
 #@click.command()
 #@click.argument('project', required=True)

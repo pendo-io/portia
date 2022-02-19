@@ -58,7 +58,7 @@ def run_dependency_check_tool(filepath, dir_path):
         exit(1)
 
     print("Starting dependency-check:")
-    print("-------------------------------------------")
+    print("-------------------------------------------",flush=True)
     
 
     if platform == 'linux' or platform == 'linux2' or platform == 'darwin': ## If the Computer is a Mac or Linux
@@ -101,6 +101,8 @@ if __name__ == "__main__":
     project = args.project
     if project == None:
         project = 'project'
+
+    ingest_data_neo4j.neo4JCheck()
 
     dir_path = os.path.dirname(os.path.realpath(__file__))
     dir_path = run_dependency_check_tool(filepath, dir_path)
