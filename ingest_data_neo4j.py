@@ -1,8 +1,32 @@
 from neo4j import GraphDatabase
 import get_dc_data
 import os
-import click
+#import click
 
+#Run these before run_cli_scan can run
+driver = GraphDatabase.driver(os.environ.get('NEO4J_DB'),
+                                  auth=(os.environ.get('NEO4J_USER'), os.environ.get('NEO4J_PWD')))
+tx = driver.session()
+
+#@click.command()
+#@click.argument('project', required=True)
+#@click.argument('file', required=False)
+def run_cli_scan(project, file):
+    if not file:
+        file = 'dependency-check-report.json'
+    project = project
+    deps, vulns = get_dc_data.get_depcheck_data(project, file)
+    if deps:
+        ingest_project(project)
+        ingest_dependencies(deps, project)
+        ingest_vulns(vulns)
+        create_vuln_relations()
+        create_project_relations()
+        add_label_colors()
+        print("Data successfully ingested in Neo4J")
+    else:
+        print("No data has been ingested")
+    driver.close() #Added to close the Driver
 
 def ingest_project(project):
     tx.run('''
@@ -73,29 +97,9 @@ def add_label_colors():
     RETURN *
     ''')
 
-@click.command()
-@click.argument('project', required=True)
-@click.argument('file', required=False)
-def run_cli_scan(project, file):
-    if not file:
-        file = 'dependency-check-report.json'
-    project = project
-    deps, vulns = get_dc_data.get_depcheck_data(project, file)
-    if deps:
-        ingest_project(project)
-        ingest_dependencies(deps, project)
-        ingest_vulns(vulns)
-        create_vuln_relations()
-        create_project_relations()
-        add_label_colors()
-        print("Data successfully ingested in Neo4J")
-    else:
-        print("No data has been ingested")
-
-
-if __name__ == "__main__":
-    driver = GraphDatabase.driver(os.environ.get('NEO4J_DB'),
-                                  auth=(os.environ.get('NEO4J_USER'), os.environ.get('NEO4J_PWD')))
-    tx = driver.session()
-    run_cli_scan()
-    driver.close()
+#if __name__ == "__main__":
+    #driver = GraphDatabase.driver(os.environ.get('NEO4J_DB'),
+    #                              auth=(os.environ.get('NEO4J_USER'), os.environ.get('NEO4J_PWD')))
+    #tx = driver.session()
+    #run_cli_scan()
+    #driver.close()

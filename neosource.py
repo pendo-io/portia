@@ -5,6 +5,7 @@ import os
 import json
 import argparse
 from time import sleep
+import webbrowser
 
 class PlatformNotSupported(Exception):
     '''
@@ -16,6 +17,7 @@ def remove_json(dir_path):
     '''
     Remove the JSON file that DependencyCheck generates to aid in cleanup.
     '''
+    print("Removing json file",flush=True)
     sleep(10)
     os.remove(dir_path + 'dependency-check-report.json')
 
@@ -29,15 +31,14 @@ def check_json(dir_path):
         try:
             if output['scanInfo']['analysisExceptions']:
                 print("If you are attempting to scan a go.mod file, make sure you have Golang installed.\n")
-                # remove_json(dir_path)
+                remove_json(dir_path)
                 exit(1)
         except KeyError:
-            print("Key error found")
+            print("No Exception thrown by dependency-check",flush=True)
         if not output['dependencies']:
             print('\nError: Dependency Check found 0 dependencies in the provided file/path. The filepath specified may not be a valid dependency file.')
             file.close()
-            # remove_json(dir_path)
-            # Make sure to delete json file before exiting probably.
+            remove_json(dir_path)
             exit(1)
 
 def run_dependency_check_tool(filepath, dir_path):
@@ -72,7 +73,7 @@ def run_dependency_check_tool(filepath, dir_path):
         process.wait()
     elif platform == 'win32' or platform == 'cygwin': ## If the Computer is a Windows
         dir_path = dir_path + '\\'
-        if not os.path.isfile(dir_path + "dependency-check\\bin\\dependency-check.sh"):
+        if not os.path.isfile(dir_path + "dependency-check\\bin\\dependency-check.bat"):
             print("Dependency Check cannot be found.")
             exit(1)
         process = subprocess.Popen([dir_path + 'dependency-check\\bin\\dependency-check.bat', '-s', filepath,'-o', dir_path +'\\dependency-check-report.json', '-f', 'JSON', '--enableExperimental'], stdout=subprocess.PIPE)
@@ -82,25 +83,31 @@ def run_dependency_check_tool(filepath, dir_path):
         process.wait()
     else:
         raise PlatformNotSupported("Please run this on a Linux, Mac, or Windows machine")
-    print("-------------------------------------------")
+    print("-------------------------------------------",flush=True)
     return dir_path
 
+def pendoProccess(project, dir_path):
+    ingest_data_neo4j.run_cli_scan(project, dir_path + 'dependency-check-report.json')
 
 if __name__ == "__main__":
     #"C:\\Users\\minew\\Downloads\\nancy-main\\nancy-main"
     parser = argparse.ArgumentParser(description='A tool that runs DependencyCheck on the given file path, then puts it into Neo4J.')
     parser.add_argument('filepath', help='the file path to run dependency check on')
-    # parser.add_argument('project', help='The name of the project being scanned')
+    parser.add_argument('-p','--project', help='This will be the name neo4j will call your project')
     
     args = parser.parse_args()
     filepath = args.filepath
     print(filepath)
-    # project = args.project
+    project = args.project
+    if project == None:
+        project = 'project'
+
     dir_path = os.path.dirname(os.path.realpath(__file__))
     dir_path = run_dependency_check_tool(filepath, dir_path)
     check_json(dir_path)
+    pendoProccess(project, dir_path)
     remove_json(dir_path)
-    print("Run Pendo Processes with json file")
-    print("DELETE Json file")
-    print("FORCE open neo4J")
+
+    webbrowser.open('http://localhost:7474/browser', new=1)
+    print("Open up Neo4J to view results. If you are running this localy you can go to:\nhttp://localhost:7474/\nAnd run the Query \nMATCH (n) RETURN n")
     print("All while it print logs to user so they know shtuff happening")
