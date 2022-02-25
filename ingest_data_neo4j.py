@@ -1,12 +1,20 @@
 from neo4j import GraphDatabase, exceptions
+from os import path
+from sys import platform
 
 import get_dc_data
 
+dir_path = path.dirname(path.realpath(__file__))
+   
+if platform == 'linux' or platform == 'linux2' or platform == 'darwin': ## If the Computer is a Mac or Linux
+    dir_path = dir_path + '/'
+elif platform == 'win32' or platform == 'cygwin': ## If the Computer is a Windows
+    dir_path = dir_path + '\\'
 
 #Read in config.in to authenticate with Neo4J
 try:
     l = list()
-    with open('config.in') as file:
+    with open(dir_path + 'config.in') as file:
         for line in file.readlines():
             parts = line.split('=')
             l.append(parts[1].strip())
