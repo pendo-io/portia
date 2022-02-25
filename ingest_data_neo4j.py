@@ -1,53 +1,93 @@
-from neo4j import GraphDatabase
-from neo4j import exceptions
+from neo4j import GraphDatabase, exceptions
+
 import get_dc_data
-import os
-#import click
+
+
+#Read in config.in to authenticate with Neo4J
+try:
+    l = list()
+    with open('config.in') as file:
+        for line in file.readlines():
+            parts = line.split('=')
+            l.append(parts[1].strip())
+    pwd = l.pop()
+    user = l.pop()
+    db = l.pop()
+except Exception:
+    print('[ERROR] The config.in file is invalid.')
+    exit(1)
 
 #Run these before run_cli_scan can run
-driver = GraphDatabase.driver(os.environ.get('NEO4J_DB'),
-                                  auth=(os.environ.get('NEO4J_USER'), os.environ.get('NEO4J_PWD')))
+driver = GraphDatabase.driver(db, auth=(user, pwd))
 tx = driver.session()
 
 def neo4JCheck():
-    print("Validating neo4j instance",flush=True)
+    '''
+    Ensure that Neo4J is installed, running, and that hte credentials
+    provided in config.in are valid.
+    '''
+    print("[INFO] Validating neo4j instance",flush=True)
     try:
         tx.run(''' MATCH (n) RETURN n ''')  #Runs a Generic Query to try and connect to the database
-        print("A valid NEO4J existance!",flush=True)
+        print("[INFO] A valid NEO4J existence!",flush=True)
     except exceptions.ServiceUnavailable:
-        print("Error: Invalid neo4j instace\nPlease make sure neo4j is installed and running")
+        print("[ERROR] Invalid neo4j instance\nPlease make sure neo4j is installed and running")
         exit(1)
     except exceptions.AuthError:
-        print("Error: Invalid neo4j credentials\nPlease make sure your credentials are correct")
+        print("[ERROR] Invalid neo4j credentials\nPlease make sure your credentials are correct")
         exit(1)
 
-#@click.command()
-#@click.argument('project', required=True)
-#@click.argument('file', required=False)
+def getDB():
+    '''
+    Get the string representation of the IP address
+    '''
+    return db
+
 def run_cli_scan(project, file):
+    '''
+    Ingest dependency-check-report.json into a representation that
+    Neo4J can use, and then put the data in Neo4J.
+    '''
     if not file:
         file = 'dependency-check-report.json'
     project = project
     deps, vulns = get_dc_data.get_depcheck_data(project, file)
     if deps:
+        print('[INFO] Ingesting the project name into Neo4J',flush=True)
         ingest_project(project)
+        
+        print('[INFO] Ingesting dependencies into Neo4J',flush=True)
         ingest_dependencies(deps, project)
+        
+        print('[INFO] Ingesting vulnerabilities',flush=True)
         ingest_vulns(vulns)
+        
+        print('[INFO] Creating relationships between vulnerabilities and dependencies',flush=True)
         create_vuln_relations()
+        
+        print('[INFO] Creating relationships between the dependencies and the project', flush=True)
         create_project_relations()
+
+        print('[INFO] Adding colors to the vulnerabilities based on severity.', flush=True)
         add_label_colors()
-        print("Data successfully ingested in Neo4J")
+        print("[INFO] Data successfully ingested in Neo4J",flush=True)
     else:
-        print("No data has been ingested")
+        print("[ERROR] No data has been ingested")
     driver.close() #Added to close the Driver
 
 def ingest_project(project):
+    '''
+    Ingest the project into Neo4J
+    '''
     tx.run('''
     MERGE (n:project {project_name: $project})
     ''', project=project)
 
 
 def ingest_vulns(vulns_list):
+    '''
+    Ingest the vulnerabilities from the dependencies into Neo4J.
+    '''
     tx.run('''    UNWIND $mapEntry AS mItem
               CALL apoc.merge.node(["vulnerability"],
               {vulnerability_name:mItem["CVE"],
@@ -60,6 +100,9 @@ def ingest_vulns(vulns_list):
 
 
 def ingest_dependencies(dependencies, project):
+    '''
+    Ingest the dependencies into Neo4J.
+    '''
     for dependency in dependencies:
         r = tx.run('''
           MATCH (d:dependency {dependency: $dependency})
@@ -88,6 +131,10 @@ def ingest_dependencies(dependencies, project):
 
 
 def create_vuln_relations():
+    '''
+    Create the relationships between the dependencies
+    and vulnerabilities in Neo4J.
+    '''
     tx.run('''   MATCH (d:dependency), (v:vulnerability)
     WHERE v.vulnerability_name IN  d.vulnerabilities
 
@@ -96,6 +143,9 @@ def create_vuln_relations():
 
 
 def create_project_relations():
+    '''
+    Create the relationships between the dependencies and the project.
+    '''
     r = tx.run('''
     MATCH (d:dependency), (p:project)
     WHERE p.project_name IN  d.projects
@@ -103,16 +153,13 @@ def create_project_relations():
     ''')
 
 def add_label_colors():
+    '''
+    Adds colors to the nodes representing vulnerabilities based on
+    severity level.
+    '''
     tx.run('''
     MATCH (v:vulnerability)
     WITH DISTINCT v.severity_desc as severity_desc, collect(DISTINCT v) AS vulns
     CALL apoc.create.addLabels(vulns, [severity_desc]) YIELD node
     RETURN *
     ''')
-
-#if __name__ == "__main__":
-    #driver = GraphDatabase.driver(os.environ.get('NEO4J_DB'),
-    #                              auth=(os.environ.get('NEO4J_USER'), os.environ.get('NEO4J_PWD')))
-    #tx = driver.session()
-    #run_cli_scan()
-    #driver.close()

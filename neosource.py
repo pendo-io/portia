@@ -1,11 +1,12 @@
-import ingest_data_neo4j
-import subprocess
+from argparse import ArgumentParser
+from json import load
+from os import path, remove
+from subprocess import Popen, PIPE
 from sys import platform, exit
-import os
-import json
-import argparse
-from time import sleep
-import webbrowser
+from webbrowser import open as open_browser
+
+import ingest_data_neo4j
+
 
 class PlatformNotSupported(Exception):
     '''
@@ -17,26 +18,25 @@ def remove_json(dir_path):
     '''
     Remove the JSON file that DependencyCheck generates to aid in cleanup.
     '''
-    print("Removing json file",flush=True)
-    sleep(10)
-    os.remove(dir_path + 'dependency-check-report.json')
+    print("[INFO] Removing json file",flush=True)
+    remove(dir_path + 'dependency-check-report.json')
 
 def check_json(dir_path):
     '''
     Verifies that the JSON file is valid. This means the JSON file that DependencyCheck output has dependencies listed. If no dependencies listed, the file will be considered invalid.
     '''
-    print("Validating JSON file",flush=True)
+    print("[INFO] Validating JSON file",flush=True)
     with open(dir_path + 'dependency-check-report.json') as file:
-        output = json.load(file)
+        output = load(file)
         try:
             if output['scanInfo']['analysisExceptions']:
-                print("If you are attempting to scan a go.mod file, make sure you have Golang installed.\n")
+                print("[ERROR] If you are attempting to scan a go.mod file, make sure you have Golang installed.\n")
                 remove_json(dir_path)
                 exit(1)
         except KeyError:
-            print("No Exception thrown by dependency-check",flush=True)
+            print("[INFO] No Exception thrown by dependency-check",flush=True)
         if not output['dependencies']:
-            print('\nError: Dependency Check found 0 dependencies in the provided file/path. The filepath specified may not be a valid dependency file.')
+            print('\n[ERROR] Dependency Check found 0 dependencies in the provided file/path. The filepath specified may not be a valid dependency file.')
             file.close()
             remove_json(dir_path)
             exit(1)
@@ -53,63 +53,68 @@ def run_dependency_check_tool(filepath, dir_path):
     Output: Prints out DependencyCheck as it is running.
     '''
 
-    if not os.path.isfile(filepath) and not os.path.isdir(filepath):
-        print("\nError: Not a valid filepath. \n\nTry 'neosource.py -h' for help.")
+    if not path.isfile(filepath) and not path.isdir(filepath):
+        print("\n[ERROR] Not a valid filepath. \n\nTry 'neosource.py -h' for help.")
         exit(1)
 
-    print("Starting dependency-check:")
+    print("[INFO] Starting dependency-check:")
     print("-------------------------------------------",flush=True)
     
 
     if platform == 'linux' or platform == 'linux2' or platform == 'darwin': ## If the Computer is a Mac or Linux
         dir_path = dir_path + '/'
-        if not os.path.isfile(dir_path + "dependency-check/bin/dependency-check.sh"):
-            print("Dependency Check cannot be found.")
+        if not path.isfile(dir_path + "dependency-check/bin/dependency-check.sh"):
+            print("[ERROR] Dependency Check cannot be found.")
             exit(1)
-        process = subprocess.Popen([dir_path + 'dependency-check/bin/dependency-check.sh', '-s', filepath,'-o', dir_path + '/dependency-check-report.json', '-f', 'JSON', '--enableExperimental'], stdout=subprocess.PIPE)
+        process = Popen([dir_path + 'dependency-check/bin/dependency-check.sh', '-s', filepath,'-o', dir_path + '/dependency-check-report.json', '-f', 'JSON', '--enableExperimental'], stdout=PIPE)
         for line in iter(process.stdout.readline, b''):
             print(line.decode('utf-8', errors='ignore').strip())
         process.stdout.close()
         process.wait()
     elif platform == 'win32' or platform == 'cygwin': ## If the Computer is a Windows
         dir_path = dir_path + '\\'
-        if not os.path.isfile(dir_path + "dependency-check\\bin\\dependency-check.bat"):
-            print("Dependency Check cannot be found.")
+        if not path.isfile(dir_path + "dependency-check\\bin\\dependency-check.bat"):
+            print("[ERROR] Dependency Check cannot be found.")
             exit(1)
-        process = subprocess.Popen([dir_path + 'dependency-check\\bin\\dependency-check.bat', '-s', filepath,'-o', dir_path +'\\dependency-check-report.json', '-f', 'JSON', '--enableExperimental'], stdout=subprocess.PIPE)
+        process = Popen([dir_path + 'dependency-check\\bin\\dependency-check.bat', '-s', filepath,'-o', dir_path +'\\dependency-check-report.json', '-f', 'JSON', '--enableExperimental'], stdout=PIPE)
         for line in iter(process.stdout.readline, b''):
             print(line.decode('utf-8', errors='ignore').strip(), flush = True)
         process.stdout.close()
         process.wait()
     else:
-        raise PlatformNotSupported("Please run this on a Linux, Mac, or Windows machine")
+        raise PlatformNotSupported("[ERROR] Please run this on a Linux, Mac, or Windows machine")
     print("-------------------------------------------",flush=True)
     return dir_path
 
 def pendoProccess(project, dir_path):
+    '''
+    Call the Pendo processes responsible for validating that the
+    specified Neo4J instance is accessible, making
+    dependency-check-report.json Neo4J friendly, and putting the
+    dependencies and vulnerabilities in Neo4J.
+    '''
     ingest_data_neo4j.run_cli_scan(project, dir_path + 'dependency-check-report.json')
 
 if __name__ == "__main__":
     #"C:\\Users\\minew\\Downloads\\nancy-main\\nancy-main"
-    parser = argparse.ArgumentParser(description='A tool that runs DependencyCheck on the given file path, then puts it into Neo4J.')
+    parser = ArgumentParser(description='A tool that runs DependencyCheck on the given file path, then puts it into Neo4J.')
     parser.add_argument('filepath', help='the file path to run dependency check on')
     parser.add_argument('-p','--project', help='This will be the name neo4j will call your project')
     
     args = parser.parse_args()
     filepath = args.filepath
-    print(filepath)
+    print('[INFO] ' + filepath)
     project = args.project
     if project == None:
         project = 'project'
 
     ingest_data_neo4j.neo4JCheck()
 
-    dir_path = os.path.dirname(os.path.realpath(__file__))
+    dir_path = path.dirname(path.realpath(__file__))
     dir_path = run_dependency_check_tool(filepath, dir_path)
     check_json(dir_path)
     pendoProccess(project, dir_path)
     remove_json(dir_path)
-
-    webbrowser.open('http://localhost:7474/browser', new=1)
-    print("Open up Neo4J to view results. If you are running this localy you can go to:\nhttp://localhost:7474/\nAnd run the Query \nMATCH (n) RETURN n")
-    print("All while it print logs to user so they know shtuff happening")
+    db2 = ingest_data_neo4j.getDB().split(':')[1][2:] 
+    open_browser('http://'+ db2 +':7474/browser', new=1)
+    print("[INFO] Open up Neo4J to view results.\nhttp://" + db2 + ":7474/\n[INFO] Run the query 'MATCH (n) RETURN n' to view all results")
