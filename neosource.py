@@ -116,5 +116,6 @@ if __name__ == "__main__":
     pendoProccess(project, dir_path)
     remove_json(dir_path)
     db2 = ingest_data_neo4j.getDB().split(':')[1][2:] 
+    
     open_browser('http://'+ db2 +':7474/browser', new=1)
     print("[INFO] Open up Neo4J to view results.\nhttp://" + db2 + ":7474/\n[INFO] Run the query 'MATCH (n) RETURN n' to view all results")
