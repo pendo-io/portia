@@ -100,7 +100,8 @@ if __name__ == "__main__":
     parser = ArgumentParser(description='A tool that runs DependencyCheck on the given file path, then puts it into Neo4J.')
     parser.add_argument('filepath', help='the file path to run dependency check on')
     parser.add_argument('-p','--project', help='This will be the name neo4j will call your project')
-    
+    parser.add_argument('-b','--browser', help='This will enable the program to open neo4j in the browser after the code has finished running', action="store_true")
+
     args = parser.parse_args()
     filepath = args.filepath
     print('[INFO] ' + filepath)
@@ -117,5 +118,6 @@ if __name__ == "__main__":
     remove_json(dir_path)
     db2 = ingest_data_neo4j.getDB().split(':')[1][2:] 
     
-    open_browser('http://'+ db2 +':7474/browser', new=1)
+    if args.browser:
+        open_browser('http://'+ db2 +':7474/browser', new=1) ##MAKE THIS OPTIONAL!
     print("[INFO] Open up Neo4J to view results.\nhttp://" + db2 + ":7474/\n[INFO] Run the query 'MATCH (n) RETURN n' to view all results")
