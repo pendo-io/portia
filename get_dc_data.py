@@ -94,5 +94,5 @@ def get_depcheck_data(project, file):
             return get_dc_data(dependencies, project)
 
     except FileNotFoundError:
-        print("File {} not found".format(file))
+        print("[ERROR] File {} not found".format(file))
         return None, None

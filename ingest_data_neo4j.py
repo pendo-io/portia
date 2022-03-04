@@ -23,7 +23,7 @@ try:
     db = l.pop()
 except Exception:
     print('[ERROR] The config.in file is invalid.')
-    exit(1)
+    exit(0)
 
 #Run these before run_cli_scan can run
 driver = GraphDatabase.driver(db, auth=(user, pwd))
@@ -40,10 +40,10 @@ def neo4JCheck():
         print("[INFO] A valid NEO4J existence!",flush=True)
     except exceptions.ServiceUnavailable:
         print("[ERROR] Invalid neo4j instance\nPlease make sure neo4j is installed and running")
-        exit(1)
+        exit(0)
     except exceptions.AuthError:
         print("[ERROR] Invalid neo4j credentials\nPlease make sure your credentials are correct")
-        exit(1)
+        exit(0)
 
 def getDB():
     '''
@@ -58,7 +58,6 @@ def run_cli_scan(project, file):
     '''
     if not file:
         file = 'dependency-check-report.json'
-    project = project
     deps, vulns = get_dc_data.get_depcheck_data(project, file)
     if deps:
         print('[INFO] Ingesting the project name into Neo4J',flush=True)
