@@ -1,6 +1,6 @@
 from neo4j import GraphDatabase, exceptions
 from os import path
-from sys import platform
+from sys import platform, stderr
 
 import get_dc_data
 
@@ -22,7 +22,7 @@ try:
     user = l.pop()
     db = l.pop()
 except Exception:
-    print('[ERROR] The config.in file is invalid.')
+    print('[ERROR] The config.in file is invalid.', file=stderr)
     exit(0)
 
 #Run these before run_cli_scan can run
@@ -39,10 +39,10 @@ def neo4JCheck():
         tx.run(''' MATCH (n) RETURN n ''')  #Runs a Generic Query to try and connect to the database
         print("[INFO] A valid NEO4J existence!",flush=True)
     except exceptions.ServiceUnavailable:
-        print("[ERROR] Invalid neo4j instance\nPlease make sure neo4j is installed and running")
+        print("[ERROR] Invalid neo4j instance\nPlease make sure neo4j is installed and running", file=stderr)
         exit(0)
     except exceptions.AuthError:
-        print("[ERROR] Invalid neo4j credentials\nPlease make sure your credentials are correct")
+        print("[ERROR] Invalid neo4j credentials\nPlease make sure your credentials are correct", file=stderr)
         exit(0)
 
 def getDB():
@@ -79,7 +79,7 @@ def run_cli_scan(project, file):
         add_label_colors()
         print("[INFO] Data successfully ingested in Neo4J",flush=True)
     else:
-        print("[ERROR] No data has been ingested")
+        print("[ERROR] No data has been ingested", file=stderr)
     driver.close() #Added to close the Driver
 
 def ingest_project(project):

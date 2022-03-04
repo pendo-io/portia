@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 from json import load
 from os import path, remove
 from subprocess import Popen, PIPE
-from sys import platform, exit
+from sys import platform, exit, stderr
 from webbrowser import open as open_browser
 
 import ingest_data_neo4j
@@ -19,7 +19,10 @@ def remove_json(dir_path):
     Remove the JSON file that DependencyCheck generates to aid in cleanup.
     '''
     print("[INFO] Removing json file",flush=True)
-    remove(dir_path + 'dependency-check-report.json')
+    try:
+        remove(dir_path + 'dependency-check-report.json') #add continue running after failed remove
+    except:
+        pass
 
 def check_json(dir_path):
     '''
@@ -30,13 +33,13 @@ def check_json(dir_path):
         output = load(file)
         try:
             if output['scanInfo']['analysisExceptions']:
-                print("[ERROR] If you are attempting to scan a go.mod file, make sure you have Golang installed.\n")
+                print("[ERROR] If you are attempting to scan a go.mod file, make sure you have Golang installed.\n", file=stderr)
                 remove_json(dir_path)
                 exit(0)
         except KeyError:
-            print("[INFO] No Exception thrown by dependency-check",flush=True)
+            print("[INFO] JSON file successfully validated",flush=True)
         if not output['dependencies']:
-            print('\n[ERROR] Dependency Check found 0 dependencies in the provided file/path. The filepath specified may not be a valid dependency file.')
+            print('\n[ERROR] Dependency Check found 0 dependencies in the provided file/path. The filepath specified may not be a valid dependency file.', file=stderr)
             remove_json(dir_path)
             exit(0)
 
@@ -53,7 +56,7 @@ def run_dependency_check_tool(filepath, dir_path):
     '''
 
     if not path.isfile(filepath) and not path.isdir(filepath):
-        print("\n[ERROR] Not a valid filepath. \n\nTry 'neosource.py -h' for help.")
+        print("\n[ERROR] Not a valid filepath. \n\nTry 'neosource.py -h' for help.", file=stderr)
         exit(0)
 
     print("[INFO] Starting dependency-check:")
@@ -63,7 +66,7 @@ def run_dependency_check_tool(filepath, dir_path):
     if platform == 'linux' or platform == 'linux2' or platform == 'darwin': ## If the Computer is a Mac or Linux
         dir_path = dir_path + '/'
         if not path.isfile(dir_path + "dependency-check/bin/dependency-check.sh"):
-            print("[ERROR] Dependency Check cannot be found.")
+            print("[ERROR] Dependency Check cannot be found.", file=stderr)
             exit(0)
         process = Popen([dir_path + 'dependency-check/bin/dependency-check.sh', '-s', filepath,'-o', dir_path + '/dependency-check-report.json', '-f', 'JSON', '--enableExperimental'], stdout=PIPE)
         for line in iter(process.stdout.readline, b''):
@@ -73,7 +76,7 @@ def run_dependency_check_tool(filepath, dir_path):
     elif platform == 'win32' or platform == 'cygwin': ## If the Computer is a Windows
         dir_path = dir_path + '\\'
         if not path.isfile(dir_path + "dependency-check\\bin\\dependency-check.bat"):
-            print("[ERROR] Dependency Check cannot be found.")
+            print("[ERROR] Dependency Check cannot be found.", file=stderr)
             exit(0)
         process = Popen([dir_path + 'dependency-check\\bin\\dependency-check.bat', '-s', filepath,'-o', dir_path +'\\dependency-check-report.json', '-f', 'JSON', '--enableExperimental'], stdout=PIPE)
         for line in iter(process.stdout.readline, b''):
@@ -81,7 +84,7 @@ def run_dependency_check_tool(filepath, dir_path):
         process.stdout.close()
         process.wait()
     else:
-        raise PlatformNotSupported("[ERROR] Please run this on a Linux, Mac, or Windows machine")
+        raise PlatformNotSupported("[ERROR] Please run this on a Linux, Mac, or Windows machine", file=stderr)
     print("-------------------------------------------",flush=True)
     return dir_path
 
