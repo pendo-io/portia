@@ -1,3 +1,4 @@
+import warnings
 from neo4j import GraphDatabase, exceptions
 from os import path
 from sys import platform, stderr
@@ -34,15 +35,18 @@ def neo4JCheck():
     Ensure that Neo4J is installed, running, and that hte credentials
     provided in config.in are valid.
     '''
-    print("[INFO] Validating neo4j instance",flush=True)
+    print("[INFO] Validating Neo4j instance",flush=True)
     try:
-        tx.run(''' MATCH (n) RETURN n ''')  #Runs a Generic Query to try and connect to the database
-        print("[INFO] A valid NEO4J existence!",flush=True)
+        warnings.filterwarnings('ignore')  #This stops a warning from neo4j about Verify_connectivity being experimental
+        driver.verify_connectivity()
+        print("[INFO] A valid Neo4j instance!",flush=True)
     except exceptions.ServiceUnavailable:
-        print("[ERROR] Invalid neo4j instance\nPlease make sure neo4j is installed and running", file=stderr)
+        print("[ERROR] Invalid Neo4j instance\nPlease make sure Neo4j is installed and running", file=stderr)
+        driver.close()
         exit(0)
     except exceptions.AuthError:
-        print("[ERROR] Invalid neo4j credentials\nPlease make sure your credentials are correct", file=stderr)
+        print("[ERROR] Invalid Neo4j credentials\nPlease make sure your credentials are correct", file=stderr)
+        driver.close()
         exit(0)
 
 def getDB():
@@ -77,7 +81,7 @@ def run_cli_scan(project, file):
 
         print('[INFO] Adding colors to the vulnerabilities based on severity.', flush=True)
         add_label_colors()
-        print("[INFO] Data successfully ingested in Neo4J",flush=True)
+        print("[INFO] Data successfully ingested in Neo4j",flush=True)
     else:
         print("[ERROR] No data has been ingested", file=stderr)
     driver.close() #Added to close the Driver
