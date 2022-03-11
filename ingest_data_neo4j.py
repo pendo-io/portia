@@ -1,7 +1,7 @@
-import warnings
+from warnings import filterwarnings
 from neo4j import GraphDatabase, exceptions
 from os import path
-from sys import platform, stderr
+from sys import platform, stderr, exit
 
 import get_dc_data
 
@@ -24,7 +24,7 @@ try:
     db = l.pop()
 except Exception:
     print('[ERROR] The config.in file is invalid.', file=stderr)
-    exit(0)
+    exit(1)
 
 #Run these before run_cli_scan can run
 driver = GraphDatabase.driver(db, auth=(user, pwd))
@@ -37,17 +37,17 @@ def neo4JCheck():
     '''
     print("[INFO] Validating Neo4j instance",flush=True)
     try:
-        warnings.filterwarnings('ignore')  #This stops a warning from neo4j about Verify_connectivity being experimental
+        filterwarnings('ignore')  #This stops a warning from neo4j about Verify_connectivity being experimental
         driver.verify_connectivity()
         print("[INFO] A valid Neo4j instance!",flush=True)
     except exceptions.ServiceUnavailable:
         print("[ERROR] Invalid Neo4j instance\nPlease make sure Neo4j is installed and running", file=stderr)
         driver.close()
-        exit(0)
+        exit(1)
     except exceptions.AuthError:
         print("[ERROR] Invalid Neo4j credentials\nPlease make sure your credentials are correct", file=stderr)
         driver.close()
-        exit(0)
+        exit(1)
 
 def getDB():
     '''
