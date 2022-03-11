@@ -30,6 +30,12 @@ except Exception:
 driver = GraphDatabase.driver(db, auth=(user, pwd))
 tx = driver.session()
 
+def closeDriver():
+    try:
+        driver.close()
+    except:
+        pass
+
 def neo4JCheck():
     '''
     Ensure that Neo4J is installed, running, and that hte credentials
