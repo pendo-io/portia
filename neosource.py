@@ -4,6 +4,7 @@ from os import path, remove
 from subprocess import Popen, PIPE
 from sys import platform, exit, stderr
 from webbrowser import open as open_browser
+from signal import signal, SIGINT
 
 import ingest_data_neo4j
 
@@ -13,6 +14,10 @@ class PlatformNotSupported(Exception):
     Raised if attempted to be run on a non-supported platform.
     '''
     pass
+
+def signal_handler(signal, frame):
+    print ('[INFO] Killed the process')
+    exit(1)
 
 def remove_json(dir_path):
     '''
@@ -33,7 +38,7 @@ def check_json(dir_path):
         output = load(file)
         try:
             if output['scanInfo']['analysisExceptions']:
-                print("[ERROR] If you are attempting to scan a go.mod file, make sure you have Golang installed.\n", file=stderr)
+                print("[ERROR] If you are attempting to scan a go.mod file, make sure you have both the go.mod and go.sum file and make sure you have Golang installed.\n", file=stderr)
                 remove_json(dir_path)
                 ingest_data_neo4j.closeDriver()
                 exit(1)
@@ -103,6 +108,7 @@ def pendoProccess(project, dir_path):
     ingest_data_neo4j.run_cli_scan(project, dir_path + 'dependency-check-report.json')
 
 if __name__ == "__main__":
+    signal(SIGINT, signal_handler)
     
     parser = ArgumentParser(description='A tool that runs DependencyCheck on the given file path, then puts it into Neo4j.')
     parser.add_argument('filepath', help='the file path to run dependency check on')

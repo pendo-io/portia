@@ -3,6 +3,14 @@ import urllib
 
 
 def get_identifiers(identifiers):
+    '''
+    Gets the identifiers of a dependency based off of the type
+    of dependency it is.
+
+    Input: data for a dependency
+
+    Output: informatoin about the dependency.
+    '''
     info = {}
 
     # no packages
@@ -53,6 +61,14 @@ def get_identifiers(identifiers):
 
 
 def get_vulnerabilities_data(vulnerabilities):
+    '''
+    Gets all of the vulnerabilities from
+    dependency-check-report.json.
+
+    Input: the vulnerabilties in dependency-check-report.json.
+
+    Output: list of vulnerability information and the corresponding CVE's
+    '''
     info = []
     cve_list = []
     for vulnerability in vulnerabilities:
@@ -71,6 +87,14 @@ def get_vulnerabilities_data(vulnerabilities):
 
 
 def get_dc_data(dependencies, project):
+    '''
+    Gets the dependencies and vulnerabilities from
+    dependency-check-report.json.
+
+    Input: the dependency data and project name.
+
+    Output: a list of dependencies and a list of vulnerabilities.
+    '''
     dependency_list = []
     vuln_list = []
     for dependency in dependencies:
@@ -88,6 +112,16 @@ def get_dc_data(dependencies, project):
 
 
 def get_depcheck_data(project, file):
+    '''
+    Opens dependency-check-report.json as a dictionary calls the
+    function for parsing the data. If the file can't be found,
+    log the error and return.
+
+    Input: the name of the project and the filepath to open (i.e.
+    dependency-check-report.json)
+
+    Output: formatted data for Neo4J.
+    '''
     try:
         with open(file) as f:
             dependencies = json.loads(f.read()).get('dependencies')
