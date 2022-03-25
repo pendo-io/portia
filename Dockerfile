@@ -9,7 +9,7 @@ ENV NEO4JLABS_PLUGINS=[\"apoc\"]
 ENV NEO4J_apoc_export_file_enabled=true
 ENV NEO4J_apoc_import_file_enabled=true
 ENV NEO4J_apoc_import_file-use__neo4j__config=true
-ENV NEO4J_AUTH=none
+ENV NEO4J_AUTH=neo4j/yourpasswordhere
 
 RUN apt-get update
 RUN apt-get install -y curl
@@ -31,4 +31,3 @@ ADD config.in /var/lib/neo4j
 ADD get_dc_data.py /var/lib/neo4j
 ADD ingest_data_neo4j.py /var/lib/neo4j
 ADD neosource.py /var/lib/neo4j
-RUN go get github.com/Flaque/filet
