@@ -70,16 +70,17 @@ Once you have your config.in file set up, and you have logged into Neo4J to prop
 
 #### Windows
 
-`./neosource.exe [directory/file to scan] #If you want to use the default project name`
+`./neosource.exe [directory/file to scan] #If you want to use the default project name`</br>
 `./neosource.exe -p [project name] [directory/file to scan] #If you have a project name`
 
 #### Linux
 
-`./neosource.sh [directory/file to scan] #If you want to use the default project name` `./neosource.sh -p [project name] [directory/file to scan] #If you have a project name`
+`./neosource.sh [directory/file to scan] #If you want to use the default project name`</br>
+`./neosource.sh -p [project name] [directory/file to scan] #If you have a project name`
 
 #### MacOS
 
-`./neosource.sh [directory/file to scan] #If you want to use the default project name`
+`./neosource.sh [directory/file to scan] #If you want to use the default project name`</br>
 `./neosource.sh -p [project name] [directory/file to scan] #If you have a project name`
 
 If this is the first time you’ve run neosource on your machine, or if DependencyCheck has an update to its database, the program will take longer to run as it will download updates of CVE’s to look for.
@@ -89,7 +90,8 @@ Otherwise, the output should look something like this:
 [INFO] [filepath]
 [INFO] Validating neo4j instance
 [INFO] A valid NEO4J existence!
-[INFO] Starting dependency-check: #A bunch of logs from DependencyCheck running …
+[INFO] Starting dependency-check: 
+# A bunch of logs from DependencyCheck running …
 [INFO] Validating JSON file 
 [INFO] No Exception thrown by dependency-check
 [INFO] Ingesting the project name into Neo4J
@@ -117,7 +119,9 @@ Be sure to wait a minute or two before moving on as the container spins up. At t
 
 Back on the command line, run the following:
 
-`docker ps docker cp [path to directory you want to scan or file you want scanned] [docker image id]:/var/lib/neo4j docker exec -it [docker container id] python3 neosource.py [directory/file you specified in the previous command]`
+`docker ps`</br>
+`docker cp [path to directory you want to scan or file you want scanned] [docker image id]:/var/lib/neo4j`</br>
+`docker exec -it [docker container id] python3 neosource.py [directory/file you specified in the previous command]`
 
 Alternatively, can run the program with
 
@@ -125,7 +129,24 @@ Alternatively, can run the program with
 
 You should see output that looks something like this:
 
-`[INFO] [Path to file or [INFO] Validating neo4j instance [INFO] A valid NEO4J existence! [INFO] Starting dependency-check: #A bunch of logs from DependencyCheck running … [INFO] Validating JSON file [INFO] No Exception thrown by dependency-check [INFO] Ingesting the project name into Neo4J [INFO] Ingesting dependencies into Neo4J [INFO] Ingesting vulnerabilities [INFO] Creating relationships between vulnerabilities and dependencies [INFO] Creating relationships between the dependencies and the project [INFO] Adding colors to the vulnerabilities based on severity. [INFO] Data successfully ingested in Neo4J [INFO] Removing json file [INFO] Open up Neo4J to view results. http://localhost:7474/ [INFO] Run the query 'MATCH (n) RETURN n' to view all results`
+```
+[INFO] [Path to file]
+[INFO] Validating neo4j instance
+[INFO] A valid NEO4J existence!
+[INFO] Starting dependency-check: #A bunch of logs from DependencyCheck running …
+[INFO] Validating JSON file
+[INFO] No Exception thrown by dependency-check
+[INFO] Ingesting the project name into Neo4J
+[INFO] Ingesting dependencies into Neo4J
+[INFO] Ingesting vulnerabilities
+[INFO] Creating relationships between vulnerabilities and dependencies
+[INFO] Creating relationships between the dependencies and the project
+[INFO] Adding colors to the vulnerabilities based on severity.
+[INFO] Data successfully ingested in Neo4J
+[INFO] Removing json file
+[INFO] Open up Neo4J to view results. http://localhost:7474/
+[INFO] Run the query 'MATCH (n) RETURN n' to view all results
+```
 
 ### Checking Results in Neo4J
 
