@@ -39,7 +39,7 @@ def check_json(dir_path):
         try:
             if output['scanInfo']['analysisExceptions']:
                 print("[ERROR] If you are attempting to scan a go.mod file, make sure you have both the go.mod and go.sum file and make sure you have Golang installed.\n", file=stderr)
-                remove_json(dir_path)
+                print(f"[ERROR] Please see the 'analysisExceptions' section of dependency-check-report.json located at {dir_path} for more details")
                 ingest_data_neo4j.closeDriver()
                 exit(1)
         except KeyError:
